@@ -1,0 +1,27 @@
+# Xcode
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+timeline.xctimeline
+playground.xcworkspace
+*.hmap
+
+# macOS
+.DS_Store
+
+# Build products and symbols
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+/.build
+
+# fastlane
+fastlane/report.xml
+fastlane/screenshots
