@@ -18,7 +18,6 @@ struct ContentView: View {
     @StateObject private var securityHandler = SecurityAlertHandler()
     @StateObject private var networkMonitor = NetworkMonitor.shared
     @State private var rateLimiter = RateLimiter()
-    @State private var lastRequestTime: Date?
     @Environment(\.scenePhase) private var scenePhase
     
     private let stockService = StockService()
@@ -72,10 +71,10 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingClearConfirmation = true }) {
-                        Image(systemName: "lock.shield")
+                        Image(systemName: "trash")
                             .foregroundColor(.secondary)
                     }
-                    .accessibilityLabel("Security settings")
+                    .accessibilityLabel("Clear result")
                 }
             }
             .alert("Security Alert", isPresented: $securityHandler.showSecurityAlert) {
@@ -289,7 +288,6 @@ struct ContentView: View {
         }
         
         isLoading = false
-        lastRequestTime = Date()
     }
     
     // MARK: - Clear Data
@@ -297,15 +295,6 @@ struct ContentView: View {
         stock = nil
         error = nil
         ticker = ""
-        SecureStorage.clearSensitiveData()
-    }
-}
-
-// MARK: - Secure Storage
-class SecureStorage {
-    static func clearSensitiveData() {
-        UserDefaults.standard.removeObject(forKey: "lastTicker")
-        UserDefaults.standard.synchronize()
     }
 }
 

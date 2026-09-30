@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Stock Error
 
 /// Every way a lookup can fail, each with the message shown to the user.
-enum StockError: LocalizedError {
+enum StockError: LocalizedError, CaseIterable {
     case invalidTicker
     case networkUnavailable
     case notFound
@@ -19,7 +19,10 @@ enum StockError: LocalizedError {
     case securityValidationFailed
     case invalidResponse
     
-    var errorDescription: String {
+    /// Kept as `String?` because that is what `LocalizedError` declares; a
+    /// non-optional property does not satisfy the requirement and
+    /// `localizedDescription` falls back to a generic system message.
+    var errorDescription: String? {
         switch self {
         case .invalidTicker:
             return "Please enter a valid stock ticker (1-5 letters)"
