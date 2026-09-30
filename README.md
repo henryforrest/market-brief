@@ -39,7 +39,7 @@ Most consumer investing apps stop at a price chart and a market cap. Market Brie
 
 ## How it works
 
-The app is a single SwiftUI scene: `MarketBriefApp` shows `ContentView`, and everything else lives in `ContentView.swift` and the model file. It uses only SwiftUI, Foundation and the Network framework.
+The app is a single SwiftUI scene: `MarketBriefApp` shows `ContentView`, and the rest is split across the `Models`, `Networking`, `Support` and `Views` folders listed under Project layout. It uses only SwiftUI, Foundation and the Network framework.
 
 **Request.** Submitting the field or tapping the button calls `fetchStock()`, an `async` function on the main actor. It validates the ticker, checks connectivity, asks the `RateLimiter` actor for a slot, then builds `GET {baseURL}/stock/{TICKER}` with a JSON `Accept` header and sends it through a `URLSession` configured with a 30-second request timeout, a 60-second resource timeout and `waitsForConnectivity`. TLS validation is left to the system trust store.
 
@@ -55,12 +55,26 @@ The app is a single SwiftUI scene: `MarketBriefApp` shows `ContentView`, and eve
 MarketBrief.xcodeproj/        Xcode project: iOS 18.5 target, Swift 5 language mode, shared scheme
 MarketBrief/
   MarketBriefApp.swift        @main entry point; one WindowGroup showing ContentView
-  ContentView.swift           The UI, plus SecurityConfig, RateLimiter, NetworkMonitor,
-                              StockError, fetchStock() and the formatting helpers
-  StockResponse.swift         Decodable model for the /stock/{ticker} response
+  Models/
+    StockResponse.swift       Decodable model for the /stock/{ticker} response
+    StockError.swift          The one error type the UI shows, with its user-facing copy
+  Networking/
+    StockService.swift        SecurityConfig (backend URL), URLSession set-up, request building,
+                              fetch, and the status-code and URLError mapping to StockError
+    RateLimiter.swift         Sliding-window actor, ten requests a minute by default
+    NetworkMonitor.swift      NWPathMonitor wrapper published to the UI
+  Support/
+    Formatters.swift          Market cap, percentage, ratio and currency formatting
+    TickerSymbol.swift        Ticker validation and input sanitising
+    SecurityAlertHandler.swift  Turns NotificationCenter security notices into an alert
+  Views/
+    ContentView.swift         The screen: search, banners, loading, error and empty states
+    MetricsCards.swift        StockDetailsView with the header, Valuation, Performance & Risk
+                              and AI Analysis cards, and MetricRow
+    GradientLoader.swift      Animated ring shown while loading
   Assets.xcassets/            App icon (light, dark and tinted) and accent colour
-MarketBriefTests/             Swift Testing target (scaffolding only)
-MarketBriefUITests/           XCUITest target (scaffolding only)
+MarketBriefTests/             Swift Testing unit tests (see Tests below)
+MarketBriefUITests/           XCUITest target (unchanged Xcode template)
 docs/screenshots/             App Store screenshots used in this README
 ```
 
@@ -69,11 +83,29 @@ docs/screenshots/             App Store screenshots used in this README
 - Requires Xcode 16.4 or later: the project targets iOS 18.5 and uses the Xcode 16 project format. It was last opened with Xcode 26.2.
 - Open `MarketBrief.xcodeproj`, pick the `MarketBrief` scheme and an iPhone or iPad simulator, and run. There are no packages to resolve and no keys to set; the app talks to the public backend.
 - The shared scheme runs the Release configuration by default; switch the Run action to Debug in Edit Scheme if you want to step through the code.
-- The backend address is the single constant `SecurityConfig.baseURL` at the top of `MarketBrief/ContentView.swift`. Change it there to point the app at a local or staging instance of market-brief-api.
+- The backend address is the single constant `SecurityConfig.baseURL` at the top of `MarketBrief/Networking/StockService.swift`. Change it there to point the app at a local or staging instance of market-brief-api.
+
+## Tests
+
+Run the unit tests from the command line (or with Cmd-U in Xcode):
+
+```
+xcodebuild test -scheme MarketBrief -configuration Debug \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:MarketBriefTests
+```
+
+They use Swift Testing, run in a few seconds and never touch the network:
+
+- `StockResponseTests`: a full payload decodes every field, a partial one (no market cap or P/E) decodes with those as nil, and an empty object decodes.
+- `StockServiceTests`: the request shape and session timeouts; 404, 429, 5xx and other status codes map to the right `StockError`, as do the offline and TLS `URLError`s; and the whole fetch path runs against a stubbed `URLProtocol`.
+- `StockErrorTests`: every case has non-empty user-facing copy and `localizedDescription` returns it.
+- `FormattersTests`: market cap abbreviation at each threshold, percentages, ratios and currency, including the N/A fallback.
+- `RateLimiterTests`: three of three requests allowed, the fourth denied, and allowed again once the window passes; the default is ten a minute.
+- `TickerSymbolTests`: one to five letters accepted, anything else rejected, and input sanitised to upper-case letters.
 
 ## Status
 
-Live on the App Store; the current release is 1.1.5 (build 6). A solo project: I designed, built, deployed and shipped both the client and the backend.
+The App Store release is 1.1.5 (build 6). This repository is at 1.1.6 (build 7), which fixes the error messages shown to users and is awaiting release. A solo project: I designed, built, deployed and shipped both the client and the backend.
 
 ## Licence
 
