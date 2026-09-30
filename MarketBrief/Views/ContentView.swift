@@ -85,13 +85,13 @@ struct ContentView: View {
             } message: {
                 Text(securityHandler.securityMessage)
             }
-            .alert("Clear Sensitive Data", isPresented: $showingClearConfirmation) {
+            .alert("Clear result?", isPresented: $showingClearConfirmation) {
                 Button("Cancel", role: .cancel) { }
                 Button("Clear", role: .destructive) {
                     clearAllData()
                 }
             } message: {
-                Text("This will clear all stock data from memory.")
+                Text("This removes the current stock data from the screen.")
             }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
